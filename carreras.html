@@ -153,9 +153,9 @@
           if (Math.abs(difX) + Math.abs(difY) > 200) {
             if (Math.abs(difX) > Math.abs(difY)) {
               if (difX > 30) {
-                camara.derecha();
-              } else {
                 camara.izquierda();
+              } else {
+                camara.derecha();
               }
             } else if (difY > 50) {
                 camara.baja();
