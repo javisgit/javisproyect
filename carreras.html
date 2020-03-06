@@ -153,14 +153,14 @@
           if (Math.abs(difX) + Math.abs(difY) > 200) {
             if (Math.abs(difX) > Math.abs(difY)) {
               if (difX > 30) {
-                fantasma.derecha();
+                camara.derecha();
               } else {
-                fantasma.izquierda();
+                camara.izquierda();
               }
             } else if (difY > 50) {
-              fantasma.baja();
+                camara.baja();
             } else {
-              fantasma.sube();
+                camara.sube();
             }
             // Reinicia valores.
             iniciaX = null;
