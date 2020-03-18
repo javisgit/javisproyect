@@ -3,173 +3,248 @@
   <head>
     <meta charset="utf-8">
     <meta name="viewport" content="width=device-width, initial-scale=1">
-    <title>Juegooo</title>
+    <title>Jueguitoo</title>
+    <h3>Correee</h3>
     <img src="https://media.gettyimages.com/vectors/track-and-field-stadium-vector-id1174185059?s=612x612" 
     width="100%" height="500">
+    <iframe src="https://giphy.com/embed/PUtBGXp7RarUA" width="480" height="360" frameBorder="0" class="giphy-embed" allowFullScreen></iframe><p>
+     
     <style>
       body {
-        /* Rompe el flujo normal pasa poder hacer swipe hacia abajo. */
         position: fixed;
         top: 0px;
         left: 0px;
-        /* ocupa todo el espacio. */
         width: 100%;
         height: 100%;
-        /* Elimina márgenes. */
         margin: 0;
-        /* Evita el scroll */
         overflow: hidden;
       }
+
       .figura {
-        position: absolute;
-        display: block;
-        font-size: 30px;
-      }
-
-        fantasma-web {
-        position: absolute;
-        font-size: 35px;
-      
-
+        position: fixed;
       }
     </style>
     <script>
-      function desvía(i) {
-        return i + 10 - 15 * Math.random();
+      //@ts-check
+      /** @abstract */
+      class Jugador extends HTMLElement {
+        /** @param {number} velocidad*/
+        izquierda(velocidad) { throw new Error("interface"); }
+        /** @param {number} velocidad*/
+        derecha(velocidad) { throw new Error("interface"); }
+        /** @param {number} velocidad*/
+        sube(velocidad) { throw new Error("interface"); }
+        /** @param {number} velocidad*/
+        baja(velocidad) { throw new Error("interface"); }
       }
-
-
-      customElements.define("fantasma-web", class extends HTMLElement {
-        connectedCallback() {
-          this.x = 0;
-          this.innerHTML =
-           " 🥅 &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; 🥅 &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; 🥅 &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; 🥅  &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; <br> <br>   🥅 &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; 🥅 &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; 🥅 &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; 🥅 <br> <br> 🥅 &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; 🥅 &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; 🥅 &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; 🥅 <br> <br> 🥅 &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; 🥅 &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; 🥅 &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; 🥅<br><br>";
+      /** @abstract */
+      class Figura extends HTMLElement {
+        /** @param {HTMLElement} jugador el jugador que es perseguido. */
+        muévete(jugador) { throw new Error("interface"); }
+      }
+      /** @interface */
+      class Fábrica {
+        /** Devuelve el único jugador, por lo que se considera Singleton.
+         *  @returns {Jugador} */
+        jugador() { throw new Error("interface"); }
+        /** Devuelve un arreglo con las figuras del juego.
+         * @returns {Figura[]} */
+        figuras() { throw new Error("interface"); }
+      }
+      class Juego {
+        /** @param {Fábrica} fábrica */
+        constructor(fábrica) {
+          this.jugador = fábrica.jugador();
+          this.figuras = fábrica.figuras();
+          this.iniciaX = null;
+          this.iniciaY = null;
+          this.interval = null;
+          this.activo = true;
         }
-        muéve() {
-          let y = 10;
-          this.style.left = `${this.x}px`;
-          this.style.top = `${y}px`;
-          this.x = this.x > 500 ? 0 : this.x + 2;
+        inicia() {
+          document.addEventListener("keydown", ev => this.teclas(ev));
+          document.addEventListener("touchstart", ev => this.iniciaTouch(ev));
+          document.addEventListener("touchmove", ev => this.desplazaTouch(ev));
+          this.interval = setInterval(() => this.mueveFiguras(), 60);
         }
-      });
+        mueveFiguras() {
+          for (const figura of this.figuras) {
+            figura.muévete(this.jugador);
+          }
+          this.detectaColisiones();
+        }
+        detectaColisiones() {
+          for (const figura of this.figuras) {
+            if (colisiona(this.jugador, figura)) {
+              this.termina();
+              break;
+            }
+          }
+        }
+        termina() {
+          this.activo = false;
+          clearInterval(this.interval);
+          this.jugador.innerHTML = " 🤦‍♂️ <br> &#x1F4A5;";
 
-      customElements.define("figura-corre", class extends HTMLElement {
+
+        }
+        /** @param {KeyboardEvent} ev*/
+        teclas(ev) {
+          if (this.activo) {
+            switch (ev.key) {
+              case "ArrowLeft":
+                this.jugador.izquierda(20);
+                break;
+              case "ArrowRight":
+                this.jugador.derecha(20);
+                break;
+              case "ArrowUp":
+                this.jugador.sube(20);
+                break;
+              case "ArrowDown":
+                this.jugador.baja(20);
+                break;
+            }
+            this.detectaColisiones();
+          }
+        }
+        /** @param {TouchEvent} ev*/
+        iniciaTouch(ev) {
+          if (this.activo) {
+            const toqueInicial = ev.touches[0];
+            this.iniciaX = toqueInicial.clientX;
+            this.iniciaY = toqueInicial.clientY;
+          }
+        }
+        /** @param {TouchEvent} ev*/
+        desplazaTouch(ev) {
+          if (this.activo && this.iniciaX && this.iniciaY) {
+            const desplazamiento = ev.touches[0];
+            var desplazamientoX = desplazamiento.clientX;
+            var desplazamientoY = desplazamiento.clientY;
+            var difX = desplazamientoX - this.iniciaX;
+            var difY = desplazamientoY - this.iniciaY;
+            if (Math.abs(difX) + Math.abs(difY) > 150) {
+              if (Math.abs(difX) > Math.abs(difY)) {
+                if (difX > 70) {
+                  this.jugador.derecha(40);
+                } else {
+                  this.jugador.izquierda(40);
+                }
+              } else if (difY > 70) {
+                this.jugador.baja(40);
+              } else {
+                this.jugador.sube(40);
+              }
+              this.detectaColisiones();
+              this.iniciaX = null;
+              this.iniciaY = null;
+            }
+          }
+        }
+      }
+      /** @param {HTMLElement} e1
+       * @param {HTMLElement} e2
+       * @returns {boolean} true - si los element colisionan. */
+      function colisiona(e1, e2) {
+        const rE1 = e1.getBoundingClientRect();
+        const rE2 = e2.getBoundingClientRect();
+        return (rE1.right >= rE2.left + 15 && rE1.left <= rE2.right - 15
+          && rE1.top <= rE2.bottom - 15 && rE1.bottom >= rE2.top + 15);
+      }
+      customElements.define("jugador-corre", class extends Jugador {
         connectedCallback() {
           this.classList.add("figura")
-          this.innerHTML = " 🏃  ";
-          this.style.fontSize = "45px";
+          // Define la figura de un emoji de paloma
+          this.innerHTML += "🏃‍ <br> <br> 🏃‍ ";
+          this.style.fontSize = "50px";
+          // Coloca el elemento a la mitad de la pantalla.
+          const raíz = document.documentElement;
+          const r = this.getBoundingClientRect();
+          this.style.left = `${(raíz.clientWidth - r.width) / 2}px`;
+          this.style.top = `${(raíz.clientHeight - r.height) / 2}px`;
         }
-        muévete(x, y) {
-          this.style.right = `${desvía(x)}px`;
+        /** @param {number} velocidad
+         * @override */
+        sube(velocidad) {
+          this.style.top = `${this.getBoundingClientRect().top - velocidad}px`;
+        }
+        /** @param {number} velocidad
+         * @override */
+        baja(velocidad) {
+          this.style.top = `${this.getBoundingClientRect().top + velocidad}px`;
+        }
+        /** @param {number} velocidad
+         * @override */
+        izquierda(velocidad) {
+          this.style.left =
+            `${this.getBoundingClientRect().left - velocidad}px`;
+        }
+        /** @param {number} velocidad
+         * @override */
+        derecha(velocidad) {
+          this.style.left =
+            `${this.getBoundingClientRect().left + velocidad}px`;
+        }
+      });
+      customElements.define("figura-balla", class extends Figura {
+        connectedCallback() {
+          this.classList.add("figura")
+          this.innerHTML = "<p> 📽 <br> <br>  <br> <p> 🥅  <br> <br> 🥅 ";
+          this.style.fontSize = "30px";
+          const r = this.getBoundingClientRect();
+          this.style.right = `${r.right}px`;
+          this.style.top = `${r.top}px`;
+          this.style.bottom = "auto";    
+          this.style.right = "auto";
+        }
+        /** @param {HTMLElement} jugador el jugador que persigue
+         * @override */
+        muévete(jugador) {
+          const r = this.getBoundingClientRect();
+          const rJ = jugador.getBoundingClientRect();
+          const y2 = rJ.top;
+          const y1 = r.top;
+          const x2 = rJ.left;
+          const x1 = r.left;
+          const pendiente = x2 === x1 ? 0 : (y2 - y1) / (x2 - x1);
+          const dirección = x2 > x1 ? 1 : -1;
+          const x = x1 + dirección * 5;
+          const y = pendiente * (x - x1) + y1;
+          this.style.left = `${desvía(x)}px`;
           this.style.top = `${desvía(y)}px`;
         }
       });
-
-      customElements.define("figura-camara", class extends HTMLElement {
-        connectedCallback() {
-          this.classList.add("figura")
-          this.innerHTML += "🎥";
-          this.x = 10;
-          this.y = 10;
-        }
-        sube() {
-          this.y -= 20;
-          this.muévete()
-        }
-        baja() {
-          this.y += 20;
-          this.muévete()
-        }
-        izquierda() {
-          this.x -= 15;
-          this.muévete()
-        }
-        derecha() {
-          this.x += 10;
-          this.muévete()
-        }
-        muévete() {
-          this.corredores = Array.from(document.querySelectorAll("figura-corre"));
-          this.style.right = `${this.x}px`;
-          this.style.top = `${this.y}px`;
-          var incr = 40;
-          for (const corres of this.corredores) {
-            corres.muévete(this.x + incr, this.y + incr);
-            incr += 70;
-          }
-        }
-      }); 
+      function desvía(i) {
+        return i + 10 - 20 * Math.random();
+      }
     </script>
   </head>
-  
-    
-    <figura-camara id="camara"></figura-camara>
-    <figura-corre></figura-corre>
-    <figura-corre></figura-corre>
-    <figura-corre></figura-corre>
-    <fantasma-web id="web"></fantasma-web>
+  <body>
+    <div>
+      <jugador-corre></jugador-corre>
+      <figura-balla style="left: 0; top: 0;"></figura-balla>
+      <footer>Copyright &copy; :0 2020 JIMENEZ PEREZ JAVIER :0 </footer>
+    </div>
     <script>
-      setInterval(() => web.muéve(), 200);
-            setInterval(() => web2.muéve(), 200);
-                  setInterval(() => web3.muéve(), 200);
-    </script>
-      <p>Corre y llega a la meta :O </p>
-    <footer>Copyright &copy; 2020 Jiménez Pérez Javier</footer>
-
-    
-    <script>
-           camara.muévete();
-      document.addEventListener("keydown", evt => {
-        switch (evt.key) {
-          case "ArrowLeft":
-            camara.derecha();
-            break;
-          case "ArrowRight":
-            camara.izquierda();
-            break;
-            case "ArrowUp":
-            camara.sube();
-            break;
-          case "ArrowDown":
-            camara.baja();
-            break;
+      //@ts-check
+      /** @implements {Fábrica} */
+      class MiFábrica {
+        constructor() {
+          /** @type {Jugador} */
+          this.jugadorSingleton = document.querySelector("jugador-corre");
         }
-      });
-      let iniciaX = null;
-      let iniciaY = null;
-      document.addEventListener('touchstart', evt => {
-        const toquInicial = evt.touches[0];
-        iniciaX = toquInicial.clientX;
-        iniciaY = toquInicial.clientY;
-      });
-      document.addEventListener('touchmove', evt => {
-        if (iniciaX && iniciaY) {
-          const mueve = evt.touches[0];
-          var mueveX = mueve.clientX;
-          var mueveY = mueve.clientY;
-          var difX = mueveX - iniciaX;
-          var difY = mueveY - iniciaY;
-          // Checa que el movimiento no sea muy corto,
-          if (Math.abs(difX) + Math.abs(difY) > 200) {
-            if (Math.abs(difX) > Math.abs(difY)) {
-              if (difX > 30) {
-                camara.izquierda();
-              } else {
-                camara.derecha();
-              }
-            } else if (difY > 50) {
-                camara.baja();
-            } else {
-                camara.sube();
-            }
-            // Reinicia valores.
-            iniciaX = null;
-            iniciaY = null;
-          }
-        } 
-      });
+        /** Devuelve el único jugador, por lo que se considera Singleton.
+         *  @returns {Jugador} */
+        jugador() { return this.jugadorSingleton; }
+        /** Devuelve un arreglo con las figuras del juego.
+         * @returns {Figura[]} */
+        figuras() {
+          return Array.from(document.querySelectorAll("figura-balla"));
+        }
+      }
+      const juego = new Juego(new MiFábrica());
+      juego.inicia();
     </script>
-  
   </body>
-  
 </html>
